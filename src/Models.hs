@@ -22,15 +22,37 @@ import           GHC.Generics         (Generic)
 
 import           Config
 
+import           Data.Text
 
-share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase |
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 PotteryProject
-    name String
-    deriving Show
+    user UserId -- required Foreign Key
+    name Text
+
+    deriving Generic
+
+User
+    username Text
+    password Text
+    email Text
+
+    UniqueEmail email
+    UniqueUser username
+
+    deriving Generic
 |]
+
+instance ToJSON User
+instance FromJSON User
 
 instance ToJSON PotteryProject
 instance FromJSON PotteryProject
 
 
+doMigrations :: SqlPersistT IO ()
+doMigrations = runMigration migrateAll
 
+runDb :: (MonadReader Config m, MonadIO m) => SqlPersistT IO b -> m b
+runDb query =  do
+    pool <- asks getPool
+    liftIO $ runSqlPool query pool

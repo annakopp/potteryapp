@@ -15,12 +15,24 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib
+  exposed-modules:     Api, Config, Models
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , servant-server
                      , wai
                      , warp
+                     , bytestring
+                     , monad-control
+                     , monad-logger
+                     , mtl
+                     , persistent
+                     , persistent-postgresql
+                     , persistent-template
+                     , servant
+                     , transformers
+                     , wai-extra
+                     , text
+                     , errors
   default-language:    Haskell2010
 
 executable potteryapp-exe
@@ -29,6 +41,8 @@ executable potteryapp-exe
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , potteryapp
+                     , warp
+                     , persistent-postgresql
   default-language:    Haskell2010
 
 test-suite potteryapp-test
