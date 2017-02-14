@@ -17,11 +17,10 @@ import Models
 import Data.Text hiding (map)
 
 type PotteryAPI =
-         "user" :> Capture "id" UserId :> "projects" :> Get '[JSON] [PotteryProject]
+         "users" :> ReqBody '[JSON] User :> Post '[JSON] Int64
+    :<|> "users" :> Capture "id" UserId :> "projects" :> Get '[JSON] [PotteryProject]
     :<|> "project"  :> ReqBody '[JSON] PotteryProject :> Post '[JSON] Int64
     :<|> "project"  :> Capture "id" PotteryProjectId :> Get '[JSON] PotteryProject
-
-
 
 type AppM = ReaderT Config (ExceptT ServantErr IO)
 
@@ -38,7 +37,10 @@ app :: Config -> Application
 app cfg = serve potteryAPI (readerServer cfg)
 
 server :: ServerT PotteryAPI AppM
-server = getProjects :<|> postProject :<|> getProject
+server = postUser :<|> getProjects :<|> postProject :<|> getProject
+
+postUser :: User -> AppM Int64
+postUser = liftM fromSqlKey . runDb . insert
 
 getProjects :: UserId -> AppM [PotteryProject]
 getProjects uid = do
