@@ -16,6 +16,7 @@ import Config    (Config(..))
 
 import Models
 import Data.Text hiding (map)
+import Data.Text.Encoding
 import Crypto.PasswordStore
 
 type PotteryAPI =
@@ -43,7 +44,7 @@ server = postUser :<|> getProjects :<|> postProject :<|> getProject
 
 postUser :: User -> AppM Int64
 postUser user = do
-    pwdHash <- liftIO $ makePassword (userPassword user) 17
+    pwdHash <- liftIO $ decodeUtf8 <$> makePassword (encodeUtf8 . userPassword $ user) 17
     liftM fromSqlKey . runDb . insert $ user{userPassword = pwdHash}
 
 getProjects :: UserId -> AppM [PotteryProject]
