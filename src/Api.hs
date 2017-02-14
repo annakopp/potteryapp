@@ -4,6 +4,7 @@
 module Api where
 
 import Control.Monad.Reader         (ReaderT, runReaderT, lift, liftM)
+import Control.Monad.IO.Class       (liftIO)
 import Network.Wai                  (Application)
 import Control.Error
 import Database.Persist.Postgresql  (selectList, Entity(..), (==.)
@@ -15,6 +16,7 @@ import Config    (Config(..))
 
 import Models
 import Data.Text hiding (map)
+import Crypto.PasswordStore
 
 type PotteryAPI =
          "users" :> ReqBody '[JSON] User :> Post '[JSON] Int64
@@ -40,7 +42,9 @@ server :: ServerT PotteryAPI AppM
 server = postUser :<|> getProjects :<|> postProject :<|> getProject
 
 postUser :: User -> AppM Int64
-postUser = liftM fromSqlKey . runDb . insert
+postUser user = do
+    pwdHash <- liftIO $ makePassword (userPassword user) 17
+    liftM fromSqlKey . runDb . insert $ user{userPassword = pwdHash}
 
 getProjects :: UserId -> AppM [PotteryProject]
 getProjects uid = do

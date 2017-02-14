@@ -33,6 +33,7 @@ library
                      , wai-extra
                      , text
                      , errors
+                     , pwstore-fast
   default-language:    Haskell2010
 
 executable potteryapp-exe
