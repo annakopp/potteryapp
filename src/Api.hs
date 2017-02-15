@@ -21,6 +21,7 @@ import Crypto.PasswordStore
 
 type PotteryAPI =
          "users" :> ReqBody '[JSON] User :> Post '[JSON] Int64
+    :<|> "users" :> "sign_in" :> ReqBody '[JSON] SignInUser :> Post '[JSON] User
     :<|> "users" :> Capture "id" UserId :> "projects" :> Get '[JSON] [PotteryProject]
     :<|> "project"  :> ReqBody '[JSON] PotteryProject :> Post '[JSON] Int64
     :<|> "project"  :> Capture "id" PotteryProjectId :> Get '[JSON] PotteryProject
@@ -40,12 +41,23 @@ app :: Config -> Application
 app cfg = serve potteryAPI (readerServer cfg)
 
 server :: ServerT PotteryAPI AppM
-server = postUser :<|> getProjects :<|> postProject :<|> getProject
+server = postUser :<|> signInUser :<|> getProjects :<|> postProject :<|> getProject
 
 postUser :: User -> AppM Int64
 postUser user = do
     pwdHash <- liftIO $ decodeUtf8 <$> makePassword (encodeUtf8 . userPassword $ user) 17
     liftM fromSqlKey . runDb . insert $ user{userPassword = pwdHash}
+
+signInUser :: SignInUser -> AppM User
+signInUser u = do
+    dbUser <- runDb $ selectList [UserEmail ==. signInEmail u] []
+    let userList = map (\(Entity _ y) -> y) dbUser
+    case userList of
+        [] -> lift $ throwE err401
+        (x:xs) -> if verifyPassword (encodeUtf8 . signInPassword $ u) (encodeUtf8 . userPassword $ x)
+                  then return x
+                  else lift $ throwE err401
+
 
 getProjects :: UserId -> AppM [PotteryProject]
 getProjects uid = do

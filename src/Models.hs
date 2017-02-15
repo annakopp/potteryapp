@@ -49,6 +49,10 @@ instance ToJSON PotteryProject
 instance FromJSON PotteryProject
 
 
+data SignInUser = SignInUser { signInEmail :: Text, signInPassword :: Text } deriving Generic
+
+instance FromJSON SignInUser
+
 doMigrations :: SqlPersistT IO ()
 doMigrations = runMigration migrateAll
 
